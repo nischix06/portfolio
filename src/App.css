@@ -206,14 +206,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;ove
   .home-win{border-radius:14px;margin:0 0.4rem;}
   .wbody{padding:1.4rem 1.2rem 1.8rem;max-height:60vh;}
   .home-h1{font-size:1.75rem;}
-  .icon-nav{gap:0.9rem;}
-  .icbox{width:46px;height:46px;font-size:1.25rem;border-radius:12px;}
-  .ic-item{width:48px;font-size:0.58rem;}
+  .icon-nav{gap:0.7rem;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:0.5rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .icon-nav::-webkit-scrollbar{display:none;}
+  .icbox{width:42px;height:42px;font-size:1.1rem;border-radius:12px;}
+  .ic-item{width:44px;font-size:0.55rem;flex-shrink:0;}
   .dwin{width:calc(100vw - 1rem) !important;left:0.5rem !important;}
   .skills-grid{grid-template-columns:1fr 1fr;}
   .playlist-grid{grid-template-columns:1fr;}
   .radio-sidebar{width:100%;}
-  .radio-tab{display:none;}
+  .radio-tab{display:flex;}
   .dock{bottom:4px;padding:7px 10px;gap:0.28rem;}
   .dock-box{width:40px;height:40px;font-size:1.1rem;border-radius:11px;}
   .dock-label{font-size:0.48rem;}
