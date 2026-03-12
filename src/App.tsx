@@ -80,10 +80,10 @@ type RadioStatus = "idle" | "loading" | "live" | "error"
 
 function RadioSidebar() {
   const [open,    setOpen]    = useState(false)
-  const [playing, setPlaying] = useState(false)
-  const [vol,     setVol]     = useState(0.5)
+  const [playing, setPlaying] = useState(true)
+  const [vol,     setVol]     = useState(0.4)
   const [si,      setSi]      = useState(0)
-  const [status,  setStatus]  = useState<RadioStatus>("idle")
+  const [status,  setStatus]  = useState<RadioStatus>("loading")
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -98,6 +98,15 @@ function RadioSidebar() {
     if (playing) { a.src = STREAMS[si].url; a.play().catch(() => setStatus("error")); setStatus("loading") }
     return () => { a.pause(); a.src = "" }
   }, [si])
+
+  // autoplay on first mount
+  useEffect(() => {
+    const a = audioRef.current
+    if (a && playing) {
+      a.src = STREAMS[0].url
+      a.play().catch(() => setStatus("error"))
+    }
+  }, [])
 
   useEffect(() => { if (audioRef.current) audioRef.current.volume = vol }, [vol])
 
@@ -577,6 +586,20 @@ export default function App() {
       {/* Dock */}
       <div className="dock">
         {NAV.map(({ id, icon, label }) => (
+          <div
+            key={id}
+            className={`dock-item ${wins.find(w => w.id === id) ? "active" : ""}`}
+            onClick={() => openWin(id)}
+          >
+            <div className="dock-box">{icon}</div>
+            <span className="dock-label">{label}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+map(({ id, icon, label }) => (
           <div
             key={id}
             className={`dock-item ${wins.find(w => w.id === id) ? "active" : ""}`}
