@@ -8,7 +8,6 @@ type WinId =
   | "proj_portfolio" | "proj_ideathon" | "ach_ideathon"
 
 interface WinState { id: WinId; zIdx: number; spawnIdx: number }
-
 interface NavItem { id: WinId; icon: string; label: string }
 
 interface WinMeta {
@@ -16,21 +15,6 @@ interface WinMeta {
   W: number
   C: (openWin: (id: WinId) => void) => ReactNode
 }
-
-const STREAMS = [
-  { name: "lofi hip hop radio", freq: "98.3 FM", icon: "📻", url: "https://stream.zeno.fm/0r0xa792kwzuv" },
-  { name: "chillhop radio", freq: "101.7 FM", icon: "🍃", url: "https://stream.zeno.fm/fyn8eh3h5f8uv" },
-  { name: "lofi girl — beats", freq: "104.5 FM", icon: "🌙", url: "https://stream.zeno.fm/f3wvbbqmdg8uv" },
-]
-
-const PLAYLISTS = [
-  { icon: "🎤", name: "Hip Hop Mix", desc: "rap · trap · bars", id: "37i9dQZF1EQnqst5TRi17F" },
-  { icon: "🤘", name: "Rock Mix", desc: "rock · alt · heavy", id: "37i9dQZF1EQpj7X7UK8OOF" },
-  { icon: "🎸", name: "Indie Mix", desc: "indie · alternative · chill", id: "37i9dQZF1EQqkOPvHGajmW" },
-  { icon: "🇮🇳", name: "Nati Mix", desc: "desi · indian · vernacular", id: "37i9dQZF1EIVKUlCrzV0kA" },
-  { icon: "🌊", name: "R&B Mix", desc: "r&b · soul · smooth", id: "37i9dQZF1EVHGWrwldPRtj" },
-  { icon: "🎮", name: "Lofi Pokemon", desc: "lofi · chill · nostalgic", id: "4Cs88ubDeFjs0b4xsVlb7M" },
-]
 
 const NAV: NavItem[] = [
   { id: "about", icon: "ℹ", label: "about" },
@@ -44,28 +28,43 @@ const NAV: NavItem[] = [
 
 function Clock() {
   const [t, setT] = useState(new Date())
+
   useEffect(() => {
     const id = setInterval(() => setT(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
-  return <>{t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</>
+
+  return (
+    <>
+      {t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+    </>
+  )
 }
 
 function TypingEffect({ phrases }: { phrases: string[] }) {
+
   const [text, setText] = useState("")
   const [pi, setPi] = useState(0)
   const [ci, setCi] = useState(0)
   const [del, setDel] = useState(false)
 
   useEffect(() => {
+
     const phrase = phrases[pi]
+
     const id = setTimeout(() => {
+
       if (!del) {
+
         if (ci < phrase.length) {
           setText(phrase.slice(0, ci + 1))
           setCi(c => c + 1)
-        } else setTimeout(() => setDel(true), 1600)
+        } else {
+          setTimeout(() => setDel(true), 1600)
+        }
+
       } else {
+
         if (ci > 0) {
           setText(phrase.slice(0, ci - 1))
           setCi(c => c - 1)
@@ -73,15 +72,22 @@ function TypingEffect({ phrases }: { phrases: string[] }) {
           setDel(false)
           setPi(p => (p + 1) % phrases.length)
         }
+
       }
-    }, del ? 36 : 72)
+
+    }, del ? 40 : 70)
+
     return () => clearTimeout(id)
+
   }, [ci, del, pi, phrases])
 
-  return <>{text}<span className="cur" /></>
+  return (
+    <>
+      {text}
+      <span className="cur" />
+    </>
+  )
 }
-
-/* ---------- Window system ---------- */
 
 interface DragWinProps {
   id: WinId
@@ -97,32 +103,43 @@ interface DragWinProps {
 }
 
 function DragWin({
-  id, title, width, initX, initY, zIdx,
-  focused, onClose, onFocus, children
+  id,
+  title,
+  width,
+  initX,
+  initY,
+  zIdx,
+  focused,
+  onClose,
+  onFocus,
+  children
 }: DragWinProps) {
 
   const [pos, setPos] = useState({ x: initX, y: initY })
   const dragging = useRef(false)
   const offset = useRef({ dx: 0, dy: 0 })
-  const posRef = useRef(pos)
-  posRef.current = pos
 
   const onBarDown = (e: React.MouseEvent) => {
     dragging.current = true
     offset.current = {
-      dx: e.clientX - posRef.current.x,
-      dy: e.clientY - posRef.current.y
+      dx: e.clientX - pos.x,
+      dy: e.clientY - pos.y
     }
   }
 
   useEffect(() => {
+
     const move = (e: MouseEvent) => {
+
       if (!dragging.current) return
+
       setPos({
         x: e.clientX - offset.current.dx,
         y: e.clientY - offset.current.dy
       })
+
     }
+
     const up = () => dragging.current = false
 
     window.addEventListener("mousemove", move)
@@ -132,31 +149,38 @@ function DragWin({
       window.removeEventListener("mousemove", move)
       window.removeEventListener("mouseup", up)
     }
-  }, [])
+
+  }, [pos])
 
   return (
     <div
       className={`dwin ${focused ? "focused" : ""}`}
-      style={{ position: "fixed", left: pos.x, top: pos.y, width, zIndex: zIdx }}
+      style={{ left: pos.x, top: pos.y, width, zIndex: zIdx, position: "fixed" }}
       onMouseDown={() => onFocus(id)}
     >
+
       <div className="wbar draggable" onMouseDown={onBarDown}>
+
         <div className="wdots">
           <div className="wd r" onClick={() => onClose(id)} />
           <div className="wd y" />
           <div className="wd g" />
         </div>
+
         <span className="wtitle">{title}</span>
+
       </div>
 
-      <div className="wbody">{children}</div>
+      <div className="wbody">
+        {children}
+      </div>
+
     </div>
   )
 }
 
-/* ---------- Window registry ---------- */
-
 const WINS: Record<WinId, WinMeta> = {
+
   about: { title: "about.txt", W: 460, C: () => <>about me</> },
   projects: { title: "projects/", W: 480, C: () => <>projects</> },
   achievements: { title: "achievements.log", W: 460, C: () => <>achievements</> },
@@ -164,9 +188,10 @@ const WINS: Record<WinId, WinMeta> = {
   music: { title: "music.wav", W: 520, C: () => <>music</> },
   now: { title: "now.log", W: 400, C: () => <>now</> },
   contact: { title: "contact.link", W: 420, C: () => <>contact</> },
-  proj_portfolio: { title: "portfolio detail", W: 480, C: () => <>portfolio</> },
-  proj_ideathon: { title: "ideathon detail", W: 480, C: () => <>ideathon</> },
-  ach_ideathon: { title: "RE-IGNITE 2.0", W: 500, C: () => <>achievement</> },
+  proj_portfolio: { title: "portfolio", W: 480, C: () => <>portfolio</> },
+  proj_ideathon: { title: "ideathon", W: 480, C: () => <>ideathon</> },
+  ach_ideathon: { title: "achievement", W: 500, C: () => <>achievement</> },
+
 }
 
 function spawnPos(n: number) {
@@ -176,8 +201,6 @@ function spawnPos(n: number) {
   }
 }
 
-/* ---------- App ---------- */
-
 export default function App() {
 
   const [wins, setWins] = useState<WinState[]>([])
@@ -186,16 +209,24 @@ export default function App() {
   const zRef = useRef(20)
 
   const openWin = useCallback((id: WinId) => {
+
     zRef.current++
     const z = zRef.current
 
     setWins(ws => {
+
       const ex = ws.find(w => w.id === id)
-      if (ex) return ws.map(w => w.id === id ? { ...w, zIdx: z } : w)
+
+      if (ex) {
+        return ws.map(w => w.id === id ? { ...w, zIdx: z } : w)
+      }
+
       return [...ws, { id, zIdx: z, spawnIdx: ws.length }]
+
     })
 
     setFocused(id)
+
   }, [])
 
   const closeWin = useCallback((id: WinId) => {
@@ -204,63 +235,90 @@ export default function App() {
   }, [])
 
   const focusWin = useCallback((id: WinId) => {
+
     zRef.current++
     const z = zRef.current
-    setWins(ws => ws.map(w => w.id === id ? { ...w, zIdx: z } : w))
+
+    setWins(ws =>
+      ws.map(w => w.id === id ? { ...w, zIdx: z } : w)
+    )
+
     setFocused(id)
+
   }, [])
 
   return (
+
     <>
+
       <div className="city-bg" />
 
       <div className="sbar">
+
         <div className="sbar-l">
           <div className="sdot" />
           <span>nischix.space</span>
         </div>
+
         <div className="sbar-r">
           <Clock />
         </div>
+
       </div>
 
       <div className="desktop">
+
         <div className="home-win">
+
           <div className="wbar">
             <span className="wtitle">home.exe — nischix</span>
           </div>
 
           <div className="wbody">
 
-            <h1>Hi, I'm <span>Arnav Sood</span></h1>
+            <h1>
+              Hi, I'm <span>Arnav Sood</span>
+            </h1>
 
-            <TypingEffect
-              phrases={[
-                "currently building cool things",
-                "AI/ML · CS · freelancing",
-                "reading books",
-                "listening to music"
-              ]}
-            />
+            <p className="home-typing">
+              <TypingEffect
+                phrases={[
+                  "currently building cool things",
+                  "AI/ML · CS · freelancing",
+                  "reading books",
+                  "listening to music"
+                ]}
+              />
+            </p>
 
             <div className="icon-nav">
+
               {NAV.map(({ id, icon, label }) => (
+
                 <div key={id} onClick={() => openWin(id)}>
+
                   <div>{icon}</div>
                   <span>{label}</span>
+
                 </div>
+
               ))}
+
             </div>
 
           </div>
+
         </div>
+
       </div>
 
       {wins.map(({ id, zIdx, spawnIdx }) => {
+
         const meta = WINS[id]
         const p = spawnPos(spawnIdx)
 
         return (
+
           <DragWin
             key={id}
             id={id}
@@ -273,24 +331,36 @@ export default function App() {
             onClose={closeWin}
             onFocus={focusWin}
           >
+
             {meta.C(openWin)}
+
           </DragWin>
+
         )
+
       })}
 
       <div className="dock">
+
         {NAV.map(({ id, icon, label }) => (
+
           <div
             key={id}
             className={`dock-item ${wins.find(w => w.id === id) ? "active" : ""}`}
             onClick={() => openWin(id)}
           >
+
             <div className="dock-box">{icon}</div>
             <span className="dock-label">{label}</span>
+
           </div>
+
         ))}
+
       </div>
 
     </>
+
   )
+
 }
