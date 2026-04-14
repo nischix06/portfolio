@@ -163,40 +163,40 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;ove
 .rtab-dot.off{background:var(--soft);box-shadow:none;}
 
 /* ── RADIO SIDEBAR ── */
-.radio-sidebar{position:fixed;right:0;top:0;bottom:0;width:280px;z-index:599;background:rgba(255,255,255,0.99);border-left:1.5px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.32s cubic-bezier(0.16,1,0.3,1);box-shadow:-12px 0 40px rgba(0,0,0,0.08);}
+.radio-sidebar{position:fixed;right:0;top:0;bottom:0;width:340px;z-index:599;background:rgba(255,255,255,0.99);border-left:1.5px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.32s cubic-bezier(0.16,1,0.3,1);box-shadow:-12px 0 40px rgba(0,0,0,0.08);overflow:hidden;}
 .radio-sidebar.open{transform:translateX(0);}
 .rs-head{padding:1.1rem 1.3rem 0.9rem;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .rs-head-title{display:flex;align-items:center;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);}
 .rs-close{background:none;border:1.5px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:0.2rem 0.5rem;font-size:0.7rem;transition:all 0.15s;}
 .rs-close:hover{border-color:var(--amber);color:var(--text);}
-.rs-body{flex:1;padding:1.2rem 1.3rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem;}
+.rs-body{flex:1;padding:1.2rem 1.3rem;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:1rem;}
 .rs-air{display:flex;align-items:center;gap:0.5rem;font-size:0.6rem;font-family:'Space Mono',monospace;}
 .rs-air-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:sbp 1s infinite;}
 .rs-air-dot.off{background:var(--soft);box-shadow:none;animation:none;}
 .rs-air-txt{color:var(--muted);}
 .rs-air-txt.on{color:#16a34a;}
-.rs-nowplaying{background:var(--amber-light);border:1.5px solid rgba(232,148,10,0.2);border-radius:12px;padding:0.95rem;}
+.rs-nowplaying{background:var(--amber-light);border:1.5px solid rgba(232,148,10,0.2);border-radius:12px;padding:0.95rem;width:100%;box-sizing:border-box;}
 .rs-np-label{font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--amber);font-family:'Space Mono',monospace;margin-bottom:0.45rem;}
 .rs-track{font-size:0.88rem;color:var(--text);margin-bottom:0.65rem;font-weight:500;}
 .rs-waveform{display:flex;align-items:flex-end;gap:3px;height:18px;}
 .rs-waveform span{width:3px;background:var(--amber);border-radius:2px;animation:eqa 0.5s ease-in-out infinite alternate;}
 .rs-waveform span:nth-child(1){height:5px}.rs-waveform span:nth-child(2){height:13px;animation-delay:0.08s}.rs-waveform span:nth-child(3){height:8px;animation-delay:0.18s}.rs-waveform span:nth-child(4){height:16px;animation-delay:0.04s}.rs-waveform span:nth-child(5){height:6px;animation-delay:0.25s}
 .rs-waveform.off span{animation-play-state:paused;opacity:0.3;}
-.rs-controls{display:flex;align-items:center;gap:0.6rem;}
-.rs-play-btn{width:40px;height:40px;border-radius:50%;background:none;border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.rs-controls{display:flex;align-items:center;gap:0.6rem;min-width:0;}
+.rs-play-btn{width:40px;height:40px;min-width:40px;min-height:40px;flex-shrink:0;border-radius:50%;background:none;border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
 .rs-play-btn.on{border-color:var(--amber);color:var(--amber);background:var(--amber-light);}
-.rs-vol-row{display:flex;align-items:center;gap:0.45rem;font-size:0.62rem;color:var(--muted);flex:1;}
-.rs-vol{flex:1;-webkit-appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+.rs-vol-row{display:flex;align-items:center;gap:0.45rem;font-size:0.62rem;color:var(--muted);flex:1;min-width:0;}
+.rs-vol{flex:1;min-width:0;-webkit-appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
 .rs-vol::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--amber);cursor:pointer;}
 .rs-st-label{font-size:0.5rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:0.45rem;}
-.rs-station{display:flex;align-items:center;gap:0.65rem;padding:0.58rem 0.75rem;border-radius:10px;border:1.5px solid transparent;cursor:pointer;transition:all 0.15s;margin-bottom:0.28rem;}
+.rs-station{display:flex;align-items:center;gap:0.65rem;padding:0.58rem 0.75rem;border-radius:10px;border:1.5px solid transparent;cursor:pointer;transition:all 0.15s;margin-bottom:0.28rem;width:100%;box-sizing:border-box;}
 .rs-station:hover{background:#fafaf9;border-color:var(--border);}
 .rs-station.active{background:var(--amber-light);border-color:rgba(232,148,10,0.25);}
 .rs-station-icon{font-size:1.05rem;flex-shrink:0;}
 .rs-st-name{font-size:0.7rem;color:var(--text);margin-bottom:0.08rem;font-weight:500;}
 .rs-st-freq{font-size:0.57rem;color:var(--muted);font-family:'Space Mono',monospace;}
 .rs-pl-label{font-size:0.5rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:0.5rem;}
-.rs-pl-item{margin-bottom:0.7rem;}
+.rs-pl-item{margin-bottom:0.7rem;width:100%;box-sizing:border-box;}
 .rs-pl-name{font-size:0.6rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:0.3rem;}
 .rs-err{font-size:0.6rem;color:#dc2626;font-family:'Space Mono',monospace;}
 
@@ -214,6 +214,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;ove
   .skills-grid{grid-template-columns:1fr 1fr;}
   .playlist-grid{grid-template-columns:1fr;}
   .radio-sidebar{width:100%;}
+  .rs-play-btn{width:44px;height:44px;min-width:44px;min-height:44px;}
   .radio-tab{display:flex;top:auto;bottom:160px;transform:none;}
   .dock{bottom:4px;padding:7px 10px;gap:0.28rem;}
   .dock-box{width:40px;height:40px;font-size:1.1rem;border-radius:11px;}
