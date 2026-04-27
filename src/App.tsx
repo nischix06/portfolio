@@ -3,12 +3,11 @@ import type { ReactNode } from "react"
 import "./App.css"
 
 import DragWin, { type WinId } from "./components/DragWin"
-import StatusBar from "./components/StatusBar"
 import TypingEffect from "./components/TypingEffect"
-import RadioSidebar from "./components/RadioSidebar"
+import characterFrame from "./assets/character.jpg"
 import {
   AboutContent, ProjectsContent, AchievementsContent, SkillsContent,
-  MusicContent, NowContent, ContactContent,
+  MusicContent, NowContent, ContactContent, RadioContent,
   PortfolioDetail, IdeathonDetail, AchIdeathonDetail,
 } from "./components/ContentWindows"
 
@@ -21,6 +20,7 @@ const NAV: NavItem[] = [
   { id: "achievements", icon: "🏆", label: "achievements" },
   { id: "skills",       icon: "⚡", label: "skills" },
   { id: "music",        icon: "🎸", label: "music" },
+  { id: "radio",        icon: "📻", label: "radio" },
   { id: "now",          icon: "◎",  label: "now" },
   { id: "contact",      icon: "@",  label: "contact" },
 ]
@@ -38,6 +38,7 @@ const WINS: Record<WinId, WinMeta> = {
   achievements:   { title: "achievements.log",   W: 460, C: (ow) => <AchievementsContent openWin={ow} /> },
   skills:         { title: "skills.json",        W: 500, C: ()   => <SkillsContent /> },
   music:          { title: "music.wav",          W: 520, C: ()   => <MusicContent /> },
+  radio:          { title: "radio.exe",           W: 420, C: ()   => <RadioContent /> },
   now:            { title: "now.log",            W: 400, C: ()   => <NowContent /> },
   contact:        { title: "contact.link",       W: 420, C: ()   => <ContactContent /> },
   proj_portfolio: { title: "portfolio — detail", W: 480, C: ()   => <PortfolioDetail /> },
@@ -85,16 +86,9 @@ export default function App() {
 
   return (
     <>
-      {/* Sky background */}
+      {/* Background */}
       <div className="city-bg" />
-      <div className="sky-cloud" style={{ width: 180, height: 38, top: 55,  left: "12%" }} />
-      <div className="sky-cloud" style={{ width: 110, height: 28, top: 85,  left: "52%" }} />
-      <div className="sky-cloud" style={{ width: 210, height: 46, top: 38,  left: "70%" }} />
-      <div className="sky-cloud" style={{ width: 140, height: 32, top: 100, left: "34%" }} />
       <div className="noise" />
-
-      {/* Status bar */}
-      <StatusBar focused={focused} />
 
       {/* Home window — fixed centre */}
       <div className="desktop">
@@ -146,16 +140,10 @@ export default function App() {
         )
       })}
 
-      {/* Animation placeholder */}
-      <div className="char-spot">
-        <div className="char-placeholder">
-          <span className="c-ico">🎸</span>
-          <span>animation</span>
-          <span>coming soon</span>
-        </div>
+      {/* Character — radio launcher */}
+      <div className="char-spot" onClick={() => openWin("radio")}>
+        <img src={characterFrame} alt="radio character" className="char-widget" />
       </div>
-
-      <RadioSidebar />
 
       {/* Dock */}
       <div className="dock">

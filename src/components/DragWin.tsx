@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 // ─── TYPES ───────────────────────────────────────────────────
 type WinId =
   | "about" | "projects" | "achievements" | "skills"
-  | "music" | "now" | "contact"
+  | "music" | "now" | "contact" | "radio"
   | "proj_portfolio" | "proj_ideathon" | "ach_ideathon"
 
 export type { WinId }
@@ -50,7 +50,7 @@ export default function DragWin({ id, title, width, initX, initY, zIdx, focused,
       if (!dragging.current) return
       setPos({
         x: Math.max(0, Math.min(e.clientX - offset.current.dx, window.innerWidth - width)),
-        y: Math.max(28, Math.min(e.clientY - offset.current.dy, window.innerHeight - 80)),
+        y: Math.max(0, Math.min(e.clientY - offset.current.dy, window.innerHeight - 80)),
       })
     }
     const onTouchMove = (e: TouchEvent) => {
@@ -58,7 +58,7 @@ export default function DragWin({ id, title, width, initX, initY, zIdx, focused,
       e.preventDefault()
       setPos({
         x: Math.max(0, Math.min(e.touches[0].clientX - offset.current.dx, window.innerWidth - width)),
-        y: Math.max(28, Math.min(e.touches[0].clientY - offset.current.dy, window.innerHeight - 80)),
+        y: Math.max(0, Math.min(e.touches[0].clientY - offset.current.dy, window.innerHeight - 80)),
       })
     }
     const onUp = () => { dragging.current = false }
