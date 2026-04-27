@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import type { ReactNode } from "react"
 
 export default function TypingEffect({ phrases }: { phrases: string[] }) {
   const [text, setText] = useState("")
