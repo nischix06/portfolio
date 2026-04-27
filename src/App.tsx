@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import type { ReactNode } from "react"
 import "./App.css"
 
@@ -20,7 +20,6 @@ const NAV: NavItem[] = [
   { id: "achievements", icon: "🏆", label: "achievements" },
   { id: "skills",       icon: "⚡", label: "skills" },
   { id: "music",        icon: "🎸", label: "music" },
-  { id: "radio",        icon: "📻", label: "radio" },
   { id: "now",          icon: "◎",  label: "now" },
   { id: "contact",      icon: "@",  label: "contact" },
 ]
@@ -28,59 +27,146 @@ const NAV: NavItem[] = [
 // ─── WINDOW REGISTRY ─────────────────────────────────────────
 interface WinMeta {
   title: string
-  W: number
   C: (openWin: (id: WinId) => void) => ReactNode
 }
 
 const WINS: Record<WinId, WinMeta> = {
-  about:          { title: "about.txt",          W: 460, C: ()   => <AboutContent /> },
-  projects:       { title: "projects/",          W: 480, C: (ow) => <ProjectsContent openWin={ow} /> },
-  achievements:   { title: "achievements.log",   W: 460, C: (ow) => <AchievementsContent openWin={ow} /> },
-  skills:         { title: "skills.json",        W: 500, C: ()   => <SkillsContent /> },
-  music:          { title: "music.wav",          W: 520, C: ()   => <MusicContent /> },
-  radio:          { title: "radio.exe",           W: 420, C: ()   => <RadioContent /> },
-  now:            { title: "now.log",            W: 400, C: ()   => <NowContent /> },
-  contact:        { title: "contact.link",       W: 420, C: ()   => <ContactContent /> },
-  proj_portfolio: { title: "portfolio — detail", W: 480, C: ()   => <PortfolioDetail /> },
-  proj_ideathon:  { title: "ideathon — detail",  W: 480, C: ()   => <IdeathonDetail /> },
-  ach_ideathon:   { title: "RE-IGNITE 2.0",      W: 500, C: ()   => <AchIdeathonDetail /> },
+  about:          { title: "about.txt",          C: ()   => <AboutContent /> },
+  projects:       { title: "projects/",          C: (ow) => <ProjectsContent openWin={ow} /> },
+  achievements:   { title: "achievements.log",   C: (ow) => <AchievementsContent openWin={ow} /> },
+  skills:         { title: "skills.json",        C: ()   => <SkillsContent /> },
+  music:          { title: "music.wav",          C: ()   => <MusicContent /> },
+  radio:          { title: "radio.exe",          C: ()   => <RadioContent /> },
+  now:            { title: "now.log",            C: ()   => <NowContent /> },
+  contact:        { title: "contact.link",       C: ()   => <ContactContent /> },
+  proj_portfolio: { title: "portfolio — detail", C: ()   => <PortfolioDetail /> },
+  proj_ideathon:  { title: "ideathon — detail",  C: ()   => <IdeathonDetail /> },
+  ach_ideathon:   { title: "RE-IGNITE 2.0",      C: ()   => <AchIdeathonDetail /> },
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────
-function spawnPos(n: number): { x: number; y: number } {
-  if (window.innerWidth < 640) return { x: 8, y: 38 }
-  return {
-    x: Math.min(window.innerWidth  / 2 - 200 + n * 30, window.innerWidth  - 520),
-    y: Math.max(50, window.innerHeight / 2 - 170 + n * 30),
+// ─── BINARY SPLIT TREE ──────────────────────────────────────
+type TileLeaf  = { type: "leaf";  id: WinId }
+type TileSplit = { type: "split"; direction: "vertical" | "horizontal"; children: [TileNode, TileNode] }
+type TileNode  = TileLeaf | TileSplit
+
+/** Check if a window ID exists anywhere in the tree */
+function containsId(node: TileNode, id: WinId): boolean {
+  if (node.type === "leaf") return node.id === id
+  return containsId(node.children[0], id) || containsId(node.children[1], id)
+}
+
+/** Collect all open window IDs from the tree */
+function getOpenIds(node: TileNode | null): WinId[] {
+  if (!node) return []
+  if (node.type === "leaf") return [node.id]
+  return [...getOpenIds(node.children[0]), ...getOpenIds(node.children[1])]
+}
+
+/** Get the depth of the shallowest leaf (largest tile) */
+function shallowestLeafDepth(node: TileNode): number {
+  if (node.type === "leaf") return 0
+  return 1 + Math.min(
+    shallowestLeafDepth(node.children[0]),
+    shallowestLeafDepth(node.children[1])
+  )
+}
+
+/** Insert a new window by splitting the largest (shallowest) leaf.
+ *  Split direction alternates: even depth = vertical, odd = horizontal */
+function insertTile(node: TileNode, id: WinId, depth: number = 0): TileNode {
+  if (node.type === "leaf") {
+    return {
+      type: "split",
+      direction: depth % 2 === 0 ? "vertical" : "horizontal",
+      children: [node, { type: "leaf", id }],
+    }
   }
+
+  const leftDepth  = shallowestLeafDepth(node.children[0])
+  const rightDepth = shallowestLeafDepth(node.children[1])
+
+  if (leftDepth <= rightDepth) {
+    return { ...node, children: [insertTile(node.children[0], id, depth + 1), node.children[1]] }
+  }
+  return { ...node, children: [node.children[0], insertTile(node.children[1], id, depth + 1)] }
+}
+
+/** Remove a window – its sibling absorbs the freed space */
+function removeTile(node: TileNode, id: WinId): TileNode | null {
+  if (node.type === "leaf") return node.id === id ? null : node
+
+  const left  = removeTile(node.children[0], id)
+  const right = removeTile(node.children[1], id)
+
+  if (!left && !right) return null
+  if (!left)  return right
+  if (!right) return left
+
+  return { ...node, children: [left, right] }
+}
+
+// ─── RECURSIVE TILE RENDERER ─────────────────────────────────
+function TileRenderer({ node, focused, openWin, closeWin, focusWin }: {
+  node: TileNode
+  focused: WinId | null
+  openWin:  (id: WinId) => void
+  closeWin: (id: WinId) => void
+  focusWin: (id: WinId) => void
+}) {
+  if (node.type === "leaf") {
+    const meta = WINS[node.id]
+    if (!meta) return null
+    return (
+      <DragWin
+        id={node.id} title={meta.title}
+        focused={focused === node.id}
+        onClose={closeWin} onFocus={focusWin}
+      >
+        {meta.C(openWin)}
+      </DragWin>
+    )
+  }
+
+  return (
+    <div className={`tile-split tile-${node.direction}`}>
+      <div className="tile-half">
+        <TileRenderer
+          node={node.children[0]} focused={focused}
+          openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+        />
+      </div>
+      <div className="tile-half">
+        <TileRenderer
+          node={node.children[1]} focused={focused}
+          openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+        />
+      </div>
+    </div>
+  )
 }
 
 // ─── APP ─────────────────────────────────────────────────────
-interface WinState { id: WinId; zIdx: number; spawnIdx: number }
-
 export default function App() {
-  const [wins,    setWins]    = useState<WinState[]>([])
+  const [tree,    setTree]    = useState<TileNode | null>(null)
   const [focused, setFocused] = useState<WinId | null>(null)
-  const zRef = useRef(20)
+
+  const openIds = useMemo(() => getOpenIds(tree), [tree])
 
   const openWin = useCallback((id: WinId) => {
-    zRef.current += 1; const z = zRef.current
-    setWins(ws => {
-      const ex = ws.find(w => w.id === id)
-      if (ex) return ws.map(w => w.id === id ? { ...w, zIdx: z } : w)
-      return [...ws, { id, zIdx: z, spawnIdx: ws.length }]
+    setTree(t => {
+      if (!t) return { type: "leaf", id }
+      if (containsId(t, id)) return t          // already open — no-op
+      return insertTile(t, id)
     })
     setFocused(id)
   }, [])
 
   const closeWin = useCallback((id: WinId) => {
-    setWins(ws => ws.filter(w => w.id !== id))
-    setFocused(f => f === id ? null : f)
+    setTree(t => t ? removeTile(t, id) : null)
+    setFocused(f => (f === id ? null : f))
   }, [])
 
   const focusWin = useCallback((id: WinId) => {
-    zRef.current += 1; const z = zRef.current
-    setWins(ws => ws.map(w => w.id === id ? { ...w, zIdx: z } : w))
     setFocused(id)
   }, [])
 
@@ -90,8 +176,8 @@ export default function App() {
       <div className="city-bg" />
       <div className="noise" />
 
-      {/* Home window — fixed centre */}
-      <div className="desktop">
+      {/* Home window — fixed centre, never moves */}
+      <div className="home-layer">
         <div className="home-win">
           <div className="wbar">
             <div className="wdots">
@@ -124,24 +210,28 @@ export default function App() {
         </div>
       </div>
 
-      {/* Draggable windows */}
-      {wins.map(({ id, zIdx, spawnIdx }) => {
-        const meta = WINS[id]; if (!meta) return null
-        const p = spawnPos(spawnIdx ?? 0)
-        return (
-          <DragWin
-            key={id} id={id} title={meta.title} width={meta.W}
-            initX={p.x} initY={p.y} zIdx={zIdx}
-            focused={focused === id}
-            onClose={closeWin} onFocus={focusWin}
-          >
-            {meta.C(openWin)}
-          </DragWin>
-        )
-      })}
+      {/* Tiling workspace — binary split tree */}
+      {tree && (
+        <div className="tile-workspace">
+          <TileRenderer
+            node={tree} focused={focused}
+            openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+          />
+        </div>
+      )}
 
-      {/* Character — radio launcher */}
+      {/* Character — radio launcher + hand-drawn callout */}
       <div className="char-spot" onClick={() => openWin("radio")}>
+        <div className="char-note">
+          <div className="char-text">
+            <span>it's me :3</span>
+            <small>click me</small>
+          </div>
+          <svg className="char-arrow" viewBox="0 0 70 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 45 C12 38, 20 15, 55 10" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+            <path d="M49 4 L58 10 L48 16" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        </div>
         <img src={characterFrame} alt="radio character" className="char-widget" />
       </div>
 
@@ -150,7 +240,7 @@ export default function App() {
         {NAV.map(({ id, icon, label }) => (
           <div
             key={id}
-            className={`dock-item ${wins.find(w => w.id === id) ? "active" : ""}`}
+            className={`dock-item ${openIds.includes(id) ? "active" : ""}`}
             onClick={() => openWin(id)}
           >
             <div className="dock-box">{icon}</div>
