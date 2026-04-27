@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import type { ReactNode } from "react"
 import "./App.css"
 
@@ -145,21 +145,40 @@ function TileRenderer({ node, focused, openWin, closeWin, focusWin }: {
   )
 }
 
+// ─── MOBILE DETECTION ────────────────────────────────────────
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isMobile
+}
+
 // ─── APP ─────────────────────────────────────────────────────
 export default function App() {
+  const isMobile = useIsMobile()
   const [tree,    setTree]    = useState<TileNode | null>(null)
   const [focused, setFocused] = useState<WinId | null>(null)
 
   const openIds = useMemo(() => getOpenIds(tree), [tree])
+  const activeApp = isMobile && openIds.length > 0 ? openIds[openIds.length - 1] : null
 
   const openWin = useCallback((id: WinId) => {
     setTree(t => {
       if (!t) return { type: "leaf", id }
+      if (isMobile) {
+        // Mobile: only one app at a time
+        return { type: "leaf", id }
+      }
       if (containsId(t, id)) return t          // already open — no-op
       return insertTile(t, id)
     })
     setFocused(id)
-  }, [])
+  }, [isMobile])
 
   const closeWin = useCallback((id: WinId) => {
     setTree(t => t ? removeTile(t, id) : null)
@@ -176,8 +195,8 @@ export default function App() {
       <div className="city-bg" />
       <div className="noise" />
 
-      {/* Home window — fixed centre, never moves */}
-      <div className="home-layer">
+      {/* Home window — hidden on mobile when app is open */}
+      <div className={`home-layer ${activeApp ? 'home-hidden' : ''}`}>
         <div className="home-win">
           <div className="wbar">
             <div className="wdots">
@@ -210,8 +229,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tiling workspace — binary split tree */}
-      {tree && (
+      {/* Tiling workspace — binary split tree (desktop only) */}
+      {!isMobile && tree && (
         <div className="tile-workspace">
           <TileRenderer
             node={tree} focused={focused}
@@ -220,34 +239,48 @@ export default function App() {
         </div>
       )}
 
-      {/* Character — radio launcher + hand-drawn callout */}
-      <div className="char-spot" onClick={() => openWin("radio")}>
-        <div className="char-note">
-          <div className="char-text">
-            <span>it's me :3</span>
-            <small>click me</small>
-          </div>
-          <svg className="char-arrow" viewBox="0 0 70 55" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 45 C12 38, 20 15, 55 10" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-            <path d="M49 4 L58 10 L48 16" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
+      {/* Mobile fullscreen windows */}
+      {isMobile && tree && (
+        <div className="mobile-workspace">
+          <TileRenderer
+            node={tree} focused={focused}
+            openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+          />
         </div>
-        <img src={characterFrame} alt="radio character" className="char-widget" />
-      </div>
+      )}
 
-      {/* Dock */}
-      <div className="dock">
-        {NAV.map(({ id, icon, label }) => (
-          <div
-            key={id}
-            className={`dock-item ${openIds.includes(id) ? "active" : ""}`}
-            onClick={() => openWin(id)}
-          >
-            <div className="dock-box">{icon}</div>
-            <span className="dock-label">{label}</span>
+      {/* Character — radio launcher + hand-drawn callout (desktop only) */}
+      {!isMobile && (
+        <div className="char-spot" onClick={() => openWin("radio")}>
+          <div className="char-note">
+            <div className="char-text">
+              <span>it's me :3</span>
+              <small>click me</small>
+            </div>
+            <svg className="char-arrow" viewBox="0 0 70 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 45 C12 38, 20 15, 55 10" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+              <path d="M49 4 L58 10 L48 16" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
           </div>
-        ))}
-      </div>
+          <img src={characterFrame} alt="radio character" className="char-widget" />
+        </div>
+      )}
+
+      {/* Dock (desktop only) */}
+      {!isMobile && (
+        <div className="dock">
+          {NAV.map(({ id, icon, label }) => (
+            <div
+              key={id}
+              className={`dock-item ${openIds.includes(id) ? "active" : ""}`}
+              onClick={() => openWin(id)}
+            >
+              <div className="dock-box">{icon}</div>
+              <span className="dock-label">{label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   )
 }

@@ -1244,82 +1244,158 @@ body {
     background: rgba(155,142,196,0.45);
 }
 
-/* ── MOBILE ── */
-@media(max-width:640px) {
-    .home-layer {
-        inset: 0 0 68px 0;
-        padding: 0.5rem;
+/* ── MOBILE (max-width: 768px) ── */
+@media(max-width: 768px) {
+    /* Hide home when app is open */
+    .home-layer.home-hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.95);
+        transition: opacity 0.2s, transform 0.2s;
     }
 
-    .tile-workspace {
-        position: relative;
-        inset: auto;
-        flex-direction: column;
-        padding: 0 0.5rem;
-        max-height: 60vh;
-        margin-bottom: 80px;
+    /* Mobile workspace - fullscreen container */
+    .mobile-workspace {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: var(--bg);
+    }
+
+    /* Fullscreen app windows on mobile */
+    .dwin-mobile {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100dvh;
+        border-radius: 0;
+        z-index: 100;
+        border: none;
+        box-shadow: none;
+    }
+
+    .dwin-mobile .wbody {
+        padding: 1rem;
+        max-height: calc(100dvh - 50px);
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-    .tile-split {
-        flex-direction: column !important;
+    /* Mobile back button */
+    .wd-back {
+        font-size: 0.7rem;
+        color: var(--accent);
+        font-family: 'Space Mono', monospace;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        background: rgba(155, 142, 196, 0.1);
+        transition: background 0.2s;
+        user-select: none;
+    }
+
+    .wd-back:hover {
+        background: rgba(155, 142, 196, 0.2);
+    }
+
+    /* Home window mobile fixes */
+    .home-layer {
+        inset: 0;
+        padding: 1rem;
+        align-items: center;
+        justify-content: center;
     }
 
     .home-win {
-        border-radius: 14px;
-        margin: 0 0.4rem;
-        overflow: visible;
+        width: 92vw;
+        max-width: none;
+        border-radius: 16px;
+        padding: 0;
     }
 
     .wbody {
-        padding: 1.4rem 0 1.8rem;
-        max-height: 60vh;
-        overflow-x: hidden;
+        padding: 1.2rem 1rem 1.5rem;
     }
 
     .home-h1 {
-        font-size: 1.75rem;
+        font-size: clamp(1.6rem, 7vw, 2.5rem);
+        line-height: 1.2;
     }
 
+    .home-sub {
+        font-size: 0.75rem;
+        padding: 0 0.5rem;
+    }
+
+    .home-typing {
+        font-size: 0.68rem;
+        min-height: 1.4em;
+    }
+
+    /* Icons grid - 2 column on mobile */
     .icon-nav {
-        gap: 0.7rem;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        justify-content: flex-start;
-        padding: 0 1rem 0.5rem 1rem;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .icon-nav::-webkit-scrollbar {
-        display: none;
-    }
-
-    .icbox {
-        width: 42px;
-        height: 42px;
-        font-size: 1.1rem;
-        border-radius: 12px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        padding: 0.5rem;
+        overflow: visible;
+        justify-content: center;
     }
 
     .ic-item {
-        width: 44px;
-        font-size: 0.55rem;
+        width: 100%;
         flex-shrink: 0;
     }
 
-    .dwin {
-        min-height: 200px;
+    .icbox {
+        width: 100%;
+        aspect-ratio: 1;
+        font-size: 1.2rem;
+        border-radius: 14px;
     }
 
+    .ic-item span {
+        font-size: 0.6rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Content inside windows - full width stacking */
+    .card,
+    .ach-card,
+    .pl-card,
+    .rs-nowplaying,
+    .rs-station,
+    .spotify-row {
+        width: 100%;
+        max-width: none;
+    }
+
+    /* Skills grid - 2 columns on mobile */
     .skills-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
     }
 
+    .sk-card {
+        padding: 0.75rem;
+    }
+
+    .sk-title {
+        font-size: 0.55rem;
+    }
+
+    .sk-pill {
+        font-size: 0.6rem;
+        padding: 0.14rem 0.4rem;
+    }
+
+    /* Playlist grid - single column */
     .playlist-grid {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
 
+    /* Radio controls mobile */
     .rs-play-btn {
         width: 44px;
         height: 44px;
@@ -1327,28 +1403,56 @@ body {
         min-height: 44px;
     }
 
+    .rs-vol {
+        flex: 1;
+    }
+
+    /* Detail views mobile */
+    .detail-title {
+        font-size: 1rem;
+    }
+
+    .detail-sub {
+        font-size: 0.58rem;
+    }
+
+    .detail-body {
+        font-size: 0.75rem;
+    }
+
+    .detail-list li {
+        font-size: 0.72rem;
+    }
+
+    /* Now items mobile */
+    .now-item {
+        gap: 0.5rem;
+    }
+
+    .now-txt {
+        font-size: 0.77rem;
+    }
+
+    /* Contact buttons mobile */
+    .cbtn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.7rem 1rem;
+    }
+
+    /* Hide dock on mobile */
     .dock {
-        bottom: 4px;
-        padding: 7px 10px;
-        gap: 0.28rem;
-    }
-
-    .dock-box {
-        width: 40px;
-        height: 40px;
-        font-size: 1.1rem;
-        border-radius: 11px;
-    }
-
-    .dock-label {
-        font-size: 0.48rem;
-    }
-
-    .char-spot {
         display: none;
     }
 
+    /* Hide character widget on mobile */
+    .char-spot,
     .char-note {
-        display: none;
+        display: none !important;
+    }
+
+    /* Hide desktop tile workspace on mobile */
+    .tile-workspace {
+        display: none !important;
     }
 }
