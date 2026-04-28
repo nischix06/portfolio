@@ -72,12 +72,12 @@ function shallowestLeafDepth(node: TileNode): number {
 }
 
 /** Insert a new window by splitting the largest (shallowest) leaf.
- *  Split direction alternates: even depth = vertical, odd = horizontal */
-function insertTile(node: TileNode, id: WinId, depth: number = 0): TileNode {
+ *  Desktop: alternates vertical/horizontal. Mobile: always horizontal (top/bottom). */
+function insertTile(node: TileNode, id: WinId, depth: number = 0, mobile: boolean = false): TileNode {
   if (node.type === "leaf") {
     return {
       type: "split",
-      direction: depth % 2 === 0 ? "vertical" : "horizontal",
+      direction: mobile ? "horizontal" : (depth % 2 === 0 ? "vertical" : "horizontal"),
       children: [node, { type: "leaf", id }],
     }
   }
@@ -86,9 +86,9 @@ function insertTile(node: TileNode, id: WinId, depth: number = 0): TileNode {
   const rightDepth = shallowestLeafDepth(node.children[1])
 
   if (leftDepth <= rightDepth) {
-    return { ...node, children: [insertTile(node.children[0], id, depth + 1), node.children[1]] }
+    return { ...node, children: [insertTile(node.children[0], id, depth + 1, mobile), node.children[1]] }
   }
-  return { ...node, children: [node.children[0], insertTile(node.children[1], id, depth + 1)] }
+  return { ...node, children: [node.children[0], insertTile(node.children[1], id, depth + 1, mobile)] }
 }
 
 /** Remove a window – its sibling absorbs the freed space */
@@ -165,17 +165,12 @@ export default function App() {
   const [focused, setFocused] = useState<WinId | null>(null)
 
   const openIds = useMemo(() => getOpenIds(tree), [tree])
-  const activeApp = isMobile && openIds.length > 0 ? openIds[openIds.length - 1] : null
 
   const openWin = useCallback((id: WinId) => {
     setTree(t => {
       if (!t) return { type: "leaf", id }
-      if (isMobile) {
-        // Mobile: only one app at a time
-        return { type: "leaf", id }
-      }
       if (containsId(t, id)) return t          // already open — no-op
-      return insertTile(t, id)
+      return insertTile(t, id, 0, isMobile)
     })
     setFocused(id)
   }, [isMobile])
@@ -195,92 +190,146 @@ export default function App() {
       <div className="city-bg" />
       <div className="noise" />
 
-      {/* Home window — hidden on mobile when app is open */}
-      <div className={`home-layer ${activeApp ? 'home-hidden' : ''}`}>
-        <div className="home-win">
-          <div className="wbar">
-            <div className="wdots">
-              <div className="wd r" style={{ opacity: 0.4, cursor: "default" }} />
-              <div className="wd y" style={{ opacity: 0.4, cursor: "default" }} />
-              <div className="wd g" style={{ opacity: 0.4, cursor: "default" }} />
+      {/* Mobile: scrollable vertical workspace with home + character + tiles */}
+      {isMobile ? (
+        <div className="mobile-tile-scroll">
+          {/* Home window — first item in vertical flow */}
+          <div className="home-win">
+            <div className="wbar">
+              <div className="wdots">
+                <div className="wd r" style={{ opacity: 0.4, cursor: "default" }} />
+                <div className="wd y" style={{ opacity: 0.4, cursor: "default" }} />
+                <div className="wd g" style={{ opacity: 0.4, cursor: "default" }} />
+              </div>
+              <span className="wtitle">home.exe — nischix</span>
             </div>
-            <span className="wtitle">home.exe — nischix</span>
+            <div className="wbody">
+              <h1 className="home-h1">Hi, I'm <span>Arnav Sood</span></h1>
+              <p className="home-sub">aspiring computer engineer · @nischix</p>
+              <p className="home-typing">
+                <TypingEffect phrases={[
+                  "currently building cool things",
+                  "AI/ML · CS · freelancing",
+                  "reading books, thinking deeply",
+                  "listening to music, always",
+                ]} />
+              </p>
+              <div className="icon-nav">
+                {NAV.map(({ id, icon, label }) => (
+                  <div key={id} className="ic-item" onClick={() => openWin(id)}>
+                    <div className="icbox">{icon}</div>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="wbody">
-            <h1 className="home-h1">Hi, I'm <span>Arnav Sood</span></h1>
-            <p className="home-sub">aspiring computer engineer · @nischix</p>
-            <p className="home-typing">
-              <TypingEffect phrases={[
-                "currently building cool things",
-                "AI/ML · CS · freelancing",
-                "reading books, thinking deeply",
-                "listening to music, always",
-              ]} />
-            </p>
-            <div className="icon-nav">
-              {NAV.map(({ id, icon, label }) => (
-                <div key={id} className="ic-item" onClick={() => openWin(id)}>
-                  <div className="icbox">{icon}</div>
-                  <span>{label}</span>
+
+          {/* Character image — centered below home, radio launcher */}
+          <div className="char-mobile" onClick={() => openWin("radio")}>
+            <img src={characterFrame} alt="radio character" className="char-widget-mobile" />
+            <span className="char-mobile-label">tap for radio ♪</span>
+          </div>
+
+          {/* Tiled windows — flat list, vertical stacking (no nested splits) */}
+          {openIds.length > 0 && (
+            <div className="tile-workspace-mobile">
+              {openIds.map(wid => {
+                const meta = WINS[wid]
+                if (!meta) return null
+                return (
+                  <DragWin
+                    key={wid}
+                    id={wid}
+                    title={meta.title}
+                    focused={focused === wid}
+                    onClose={closeWin}
+                    onFocus={focusWin}
+                  >
+                    {meta.C(openWin)}
+                  </DragWin>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Desktop: original fixed layout */
+        <>
+          {/* Home window — fixed centered */}
+          <div className="home-layer">
+            <div className="home-win">
+              <div className="wbar">
+                <div className="wdots">
+                  <div className="wd r" style={{ opacity: 0.4, cursor: "default" }} />
+                  <div className="wd y" style={{ opacity: 0.4, cursor: "default" }} />
+                  <div className="wd g" style={{ opacity: 0.4, cursor: "default" }} />
                 </div>
-              ))}
+                <span className="wtitle">home.exe — nischix</span>
+              </div>
+              <div className="wbody">
+                <h1 className="home-h1">Hi, I'm <span>Arnav Sood</span></h1>
+                <p className="home-sub">aspiring computer engineer · @nischix</p>
+                <p className="home-typing">
+                  <TypingEffect phrases={[
+                    "currently building cool things",
+                    "AI/ML · CS · freelancing",
+                    "reading books, thinking deeply",
+                    "listening to music, always",
+                  ]} />
+                </p>
+                <div className="icon-nav">
+                  {NAV.map(({ id, icon, label }) => (
+                    <div key={id} className="ic-item" onClick={() => openWin(id)}>
+                      <div className="icbox">{icon}</div>
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Tiling workspace — binary split tree */}
+          {tree && (
+            <div className="tile-workspace">
+              <TileRenderer
+                node={tree} focused={focused}
+                openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+              />
+            </div>
+          )}
+
+          {/* Character — radio launcher + hand-drawn callout */}
+          <div className="char-spot" onClick={() => openWin("radio")}>
+            <div className="char-note">
+              <div className="char-text">
+                <span>it's me :3</span>
+                <small>click me</small>
+              </div>
+              <svg className="char-arrow" viewBox="0 0 70 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 45 C12 38, 20 15, 55 10" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                <path d="M49 4 L58 10 L48 16" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+            </div>
+            <img src={characterFrame} alt="radio character" className="char-widget" />
+          </div>
+        </>
+      )}
+
+      {/* Dock — always visible */}
+      <div className="dock">
+        {NAV.map(({ id, icon, label }) => (
+          <div
+            key={id}
+            className={`dock-item ${openIds.includes(id) ? "active" : ""}`}
+            onClick={() => openWin(id)}
+          >
+            <div className="dock-box">{icon}</div>
+            <span className="dock-label">{label}</span>
+          </div>
+        ))}
       </div>
-
-      {/* Tiling workspace — binary split tree (desktop only) */}
-      {!isMobile && tree && (
-        <div className="tile-workspace">
-          <TileRenderer
-            node={tree} focused={focused}
-            openWin={openWin} closeWin={closeWin} focusWin={focusWin}
-          />
-        </div>
-      )}
-
-      {/* Mobile fullscreen windows */}
-      {isMobile && tree && (
-        <div className="mobile-workspace">
-          <TileRenderer
-            node={tree} focused={focused}
-            openWin={openWin} closeWin={closeWin} focusWin={focusWin}
-          />
-        </div>
-      )}
-
-      {/* Character — radio launcher + hand-drawn callout (desktop only) */}
-      {!isMobile && (
-        <div className="char-spot" onClick={() => openWin("radio")}>
-          <div className="char-note">
-            <div className="char-text">
-              <span>it's me :3</span>
-              <small>click me</small>
-            </div>
-            <svg className="char-arrow" viewBox="0 0 70 55" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 45 C12 38, 20 15, 55 10" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-              <path d="M49 4 L58 10 L48 16" stroke="rgba(120,100,160,0.6)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
-          </div>
-          <img src={characterFrame} alt="radio character" className="char-widget" />
-        </div>
-      )}
-
-      {/* Dock (desktop only) */}
-      {!isMobile && (
-        <div className="dock">
-          {NAV.map(({ id, icon, label }) => (
-            <div
-              key={id}
-              className={`dock-item ${openIds.includes(id) ? "active" : ""}`}
-              onClick={() => openWin(id)}
-            >
-              <div className="dock-box">{icon}</div>
-              <span className="dock-label">{label}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </>
   )
 }
