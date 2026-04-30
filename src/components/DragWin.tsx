@@ -12,16 +12,18 @@ interface TileWinProps {
   id: WinId
   title: string
   focused: boolean
+  minimized?: boolean
   onClose: (id: WinId) => void
   onFocus: (id: WinId) => void
+  onMinimize?: (id: WinId) => void
   children: ReactNode
 }
 
 // ─── COMPONENT ─────────────────────────────────────────────────
-export default function DragWin({ id, title, focused, onClose, onFocus, children }: TileWinProps) {
+export default function DragWin({ id, title, focused, minimized, onClose, onFocus, onMinimize, children }: TileWinProps) {
   return (
     <div
-      className={`dwin ${focused ? "focused" : ""}`}
+      className={`dwin ${focused ? "focused" : ""} ${minimized ? "minimized" : ""}`}
       onMouseDown={() => onFocus(id)}
       onTouchStart={() => onFocus(id)}
     >
@@ -30,7 +32,9 @@ export default function DragWin({ id, title, focused, onClose, onFocus, children
           <div className="wd r"
             onMouseDown={e => e.stopPropagation()}
             onClick={e => { e.stopPropagation(); onClose(id) }} />
-          <div className="wd y" onMouseDown={e => e.stopPropagation()} />
+          <div className="wd y"
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onMinimize?.(id) }} />
           <div className="wd g" onMouseDown={e => e.stopPropagation()} />
         </div>
         <span className="wtitle">{title}</span>

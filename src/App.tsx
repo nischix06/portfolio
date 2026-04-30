@@ -1,10 +1,11 @@
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import type { ReactNode } from "react"
 import "./App.css"
 
 import DragWin, { type WinId } from "./components/DragWin"
 import TypingEffect from "./components/TypingEffect"
 import characterFrame from "./assets/character.jpg"
+import BootScreen from "./components/BootScreen"
 import {
   AboutContent, ProjectsContent, AchievementsContent, SkillsContent,
   MusicContent, NowContent, ContactContent, RadioContent,
@@ -106,12 +107,14 @@ function removeTile(node: TileNode, id: WinId): TileNode | null {
 }
 
 // ─── RECURSIVE TILE RENDERER ─────────────────────────────────
-function TileRenderer({ node, focused, openWin, closeWin, focusWin }: {
+function TileRenderer({ node, focused, minimizedIds, openWin, closeWin, focusWin, minimizeWin }: {
   node: TileNode
   focused: WinId | null
+  minimizedIds: Set<WinId>
   openWin:  (id: WinId) => void
   closeWin: (id: WinId) => void
   focusWin: (id: WinId) => void
+  minimizeWin: (id: WinId) => void
 }) {
   if (node.type === "leaf") {
     const meta = WINS[node.id]
@@ -120,7 +123,9 @@ function TileRenderer({ node, focused, openWin, closeWin, focusWin }: {
       <DragWin
         id={node.id} title={meta.title}
         focused={focused === node.id}
+        minimized={minimizedIds.has(node.id)}
         onClose={closeWin} onFocus={focusWin}
+        onMinimize={minimizeWin}
       >
         {meta.C(openWin)}
       </DragWin>
@@ -132,13 +137,17 @@ function TileRenderer({ node, focused, openWin, closeWin, focusWin }: {
       <div className="tile-half">
         <TileRenderer
           node={node.children[0]} focused={focused}
+          minimizedIds={minimizedIds}
           openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+          minimizeWin={minimizeWin}
         />
       </div>
       <div className="tile-half">
         <TileRenderer
           node={node.children[1]} focused={focused}
+          minimizedIds={minimizedIds}
           openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+          minimizeWin={minimizeWin}
         />
       </div>
     </div>
@@ -163,14 +172,42 @@ export default function App() {
   const isMobile = useIsMobile()
   const [tree,    setTree]    = useState<TileNode | null>(null)
   const [focused, setFocused] = useState<WinId | null>(null)
+  const [minimizedIds, setMinimizedIds] = useState<Set<WinId>>(new Set())
+  const [booted, setBooted] = useState(false)
+  const shakeTimers = useRef<Map<WinId, ReturnType<typeof setTimeout>>>(new Map())
 
   const openIds = useMemo(() => getOpenIds(tree), [tree])
 
   const openWin = useCallback((id: WinId) => {
     setTree(t => {
       if (!t) return { type: "leaf", id }
-      if (containsId(t, id)) return t          // already open — no-op
+      if (containsId(t, id)) {
+        // Already open — add shake animation to draw attention
+        const allWins = document.querySelectorAll('.dwin')
+        allWins.forEach(win => {
+          const titleEl = win.querySelector('.wtitle')
+          if (titleEl && titleEl.textContent === WINS[id]?.title) {
+            win.classList.add('shake')
+            // Clear existing timer if any
+            const existing = shakeTimers.current.get(id)
+            if (existing) clearTimeout(existing)
+            const timer = setTimeout(() => {
+              win.classList.remove('shake')
+              shakeTimers.current.delete(id)
+            }, 300)
+            shakeTimers.current.set(id, timer)
+          }
+        })
+        return t
+      }
       return insertTile(t, id, 0, isMobile)
+    })
+    // Un-minimize if it was minimized
+    setMinimizedIds(s => {
+      if (!s.has(id)) return s
+      const next = new Set(s)
+      next.delete(id)
+      return next
     })
     setFocused(id)
   }, [isMobile])
@@ -178,14 +215,40 @@ export default function App() {
   const closeWin = useCallback((id: WinId) => {
     setTree(t => t ? removeTile(t, id) : null)
     setFocused(f => (f === id ? null : f))
+    setMinimizedIds(s => {
+      if (!s.has(id)) return s
+      const next = new Set(s)
+      next.delete(id)
+      return next
+    })
   }, [])
 
   const focusWin = useCallback((id: WinId) => {
     setFocused(id)
   }, [])
 
+  const minimizeWin = useCallback((id: WinId) => {
+    setMinimizedIds(s => {
+      const next = new Set(s)
+      next.add(id)
+      return next
+    })
+    setFocused(f => f === id ? null : f)
+  }, [])
+
+  const restoreWin = useCallback((id: WinId) => {
+    setMinimizedIds(s => {
+      const next = new Set(s)
+      next.delete(id)
+      return next
+    })
+    setFocused(id)
+  }, [])
+
   return (
     <>
+      {!booted && <BootScreen onComplete={() => setBooted(true)} />}
+      <div className={`desktop-root ${booted ? "booted" : "not-booted"}`}>
       {/* Background */}
       <div className="city-bg" />
       <div className="noise" />
@@ -243,8 +306,10 @@ export default function App() {
                     id={wid}
                     title={meta.title}
                     focused={focused === wid}
+                    minimized={minimizedIds.has(wid)}
                     onClose={closeWin}
                     onFocus={focusWin}
+                    onMinimize={minimizeWin}
                   >
                     {meta.C(openWin)}
                   </DragWin>
@@ -295,7 +360,9 @@ export default function App() {
             <div className="tile-workspace">
               <TileRenderer
                 node={tree} focused={focused}
+                minimizedIds={minimizedIds}
                 openWin={openWin} closeWin={closeWin} focusWin={focusWin}
+                minimizeWin={minimizeWin}
               />
             </div>
           )}
@@ -319,16 +386,33 @@ export default function App() {
 
       {/* Dock — always visible */}
       <div className="dock">
-        {NAV.map(({ id, icon, label }) => (
-          <div
-            key={id}
-            className={`dock-item ${openIds.includes(id) ? "active" : ""}`}
-            onClick={() => openWin(id)}
-          >
-            <div className="dock-box">{icon}</div>
-            <span className="dock-label">{label}</span>
-          </div>
-        ))}
+        {NAV.map(({ id, icon, label }) => {
+          const isOpen = openIds.includes(id)
+          const isMinimized = minimizedIds.has(id)
+          const dockClass = [
+            'dock-item',
+            isOpen && !isMinimized ? 'active' : '',
+            isMinimized ? 'minimized' : '',
+          ].filter(Boolean).join(' ')
+
+          return (
+            <div
+              key={id}
+              className={dockClass}
+              onClick={() => {
+                if (isMinimized) {
+                  restoreWin(id)
+                } else {
+                  openWin(id)
+                }
+              }}
+            >
+              <div className="dock-box">{icon}</div>
+              <span className="dock-label">{label}</span>
+            </div>
+          )
+        })}
+      </div>
       </div>
     </>
   )
